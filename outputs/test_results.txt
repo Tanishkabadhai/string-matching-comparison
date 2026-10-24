@@ -1,0 +1,33 @@
+test_known_answers (test_matchers.A_NormalOperation.test_known_answers) ... ok
+test_no_match (test_matchers.A_NormalOperation.test_no_match) ... ok
+test_overlapping_matches_all_reported (test_matchers.A_NormalOperation.test_overlapping_matches_all_reported) ... ok
+test_case_sensitive (test_matchers.B_EdgeCases.test_case_sensitive) ... ok
+test_empty_text (test_matchers.B_EdgeCases.test_empty_text) ... ok
+test_match_at_start_and_end (test_matchers.B_EdgeCases.test_match_at_start_and_end) ... ok
+test_pattern_equals_text (test_matchers.B_EdgeCases.test_pattern_equals_text) ... ok
+test_pattern_longer_than_text (test_matchers.B_EdgeCases.test_pattern_longer_than_text) ... ok
+test_single_character (test_matchers.B_EdgeCases.test_single_character) ... ok
+test_special_and_unicode_characters (test_matchers.B_EdgeCases.test_special_and_unicode_characters) ... ok
+test_bad_rabin_karp_parameters (test_matchers.C_InvalidInput.test_bad_rabin_karp_parameters) ... ok
+test_empty_pattern_rejected (test_matchers.C_InvalidInput.test_empty_pattern_rejected) ... ok
+test_non_string_rejected (test_matchers.C_InvalidInput.test_non_string_rejected) ... ok
+test_both_algorithms_agree_with_each_other (test_matchers.D_CorrectnessAgainstOracle.test_both_algorithms_agree_with_each_other) ... ok
+test_random_inputs_larger_alphabet (test_matchers.D_CorrectnessAgainstOracle.test_random_inputs_larger_alphabet) ... ok
+test_random_inputs_small_alphabet (test_matchers.D_CorrectnessAgainstOracle.test_random_inputs_small_alphabet)
+Small alphabet -> many matches and many hash collisions: a harsh test. ... ok
+test_naive_best_case (test_matchers.E_ComplexityCounters.test_naive_best_case) ... ok
+test_naive_worst_case (test_matchers.E_ComplexityCounters.test_naive_worst_case) ... ok
+test_naive_worst_case_all_match (test_matchers.E_ComplexityCounters.test_naive_worst_case_all_match) ... ok
+test_rabin_karp_avoids_comparisons_where_naive_does_not (test_matchers.E_ComplexityCounters.test_rabin_karp_avoids_comparisons_where_naive_does_not) ... ok
+test_rabin_karp_structure_counts (test_matchers.E_ComplexityCounters.test_rabin_karp_structure_counts) ... ok
+test_rabin_karp_worst_case_all_match (test_matchers.E_ComplexityCounters.test_rabin_karp_worst_case_all_match) ... ok
+test_larger_modulus_fewer_spurious_hits (test_matchers.F_RabinKarpSpuriousHits.test_larger_modulus_fewer_spurious_hits) ... ok
+test_spurious_plus_true_equals_hash_hits (test_matchers.F_RabinKarpSpuriousHits.test_spurious_plus_true_equals_hash_hits) ... ok
+test_textbook_spurious_hit (test_matchers.F_RabinKarpSpuriousHits.test_textbook_spurious_hit) ... ok
+test_tiny_modulus_still_correct (test_matchers.F_RabinKarpSpuriousHits.test_tiny_modulus_still_correct) ... ok
+test_trace_matches_real_runs (test_matchers.G_TraceAgreesWithImplementation.test_trace_matches_real_runs) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.113s
+
+OK

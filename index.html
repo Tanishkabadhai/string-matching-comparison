@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naive vs Rabin-Karp</title>
+<meta name="description" content="Compare the Naive and Rabin-Karp string matching algorithms on the same input, with operation counts, a step-by-step trace and graphs.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d2330'/%3E%3Ctext x='16' y='22' font-size='16' font-family='monospace' font-weight='700' text-anchor='middle' fill='%23fff'%3Eab%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg:#f6f5f1; --card:#ffffff; --ink:#1d2330; --muted:#667085; --line:#e3e1da;
+    --naive:#2f6fdb; --rk:#d9622b; --good:#1f9d63; --warn:#c98a00; --bad:#c2410c;
+    --code:#f1efe8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#14171d; --card:#1c2029; --ink:#e8eaf0; --muted:#98a2b3; --line:#2c3240;
+      --naive:#6ea0ff; --rk:#ff8f5e; --good:#4cc790; --warn:#e8b53a; --bad:#ff8a5c; --code:#252a35;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#14171d; --card:#1c2029; --ink:#e8eaf0; --muted:#98a2b3; --line:#2c3240;
+    --naive:#6ea0ff; --rk:#ff8f5e; --good:#4cc790; --warn:#e8b53a; --bad:#ff8a5c; --code:#252a35;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:1040px; margin:0 auto; padding:24px 16px 64px; }
+  header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:20px; }
+  h1 { font-size:1.55rem; margin:0 0 4px; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin:0; font-size:.95rem; }
+  .theme { background:var(--card); border:1px solid var(--line); color:var(--ink); border-radius:8px;
+           padding:6px 10px; cursor:pointer; font-size:.85rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:16px; }
+  h2 { font-size:1.05rem; margin:0 0 12px; }
+  label { display:block; font-size:.8rem; color:var(--muted); margin:0 0 4px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; }
+  input[type=text], input[type=number], select, textarea {
+    width:100%; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:8px;
+    padding:9px 10px; font:inherit; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.95rem; }
+  textarea { resize:vertical; min-height:64px; }
+  input:focus, select:focus, textarea:focus { outline:2px solid var(--naive); outline-offset:1px; }
+  .grid { display:grid; gap:12px; }
+  .g2 { grid-template-columns:1fr 1fr; }
+  .g4 { grid-template-columns:2fr 1fr 1fr 1fr; align-items:end; }
+  @media (max-width:720px) { .g2,.g4 { grid-template-columns:1fr; } }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-top:12px; }
+  button.primary { background:var(--ink); color:var(--bg); border:0; border-radius:9px; padding:10px 20px;
+                   font:inherit; font-weight:600; cursor:pointer; }
+  button.primary:hover { opacity:.88; }
+  .err { color:var(--bad); font-size:.9rem; margin-top:8px; min-height:1.2em; }
+  .hint { color:var(--muted); font-size:.82rem; margin-top:6px; }
+
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:720px) { .cols { grid-template-columns:1fr; } }
+  .alg { border-top:4px solid var(--c); }
+  .alg h2 { display:flex; justify-content:space-between; align-items:baseline; }
+  .alg .tag { font-size:.75rem; color:var(--muted); font-weight:500; }
+  .matches { font-family:ui-monospace,Consolas,monospace; background:var(--code); border-radius:8px;
+             padding:8px 10px; margin-bottom:12px; word-break:break-word; font-size:.92rem; }
+  table.stats { width:100%; border-collapse:collapse; font-size:.93rem; }
+  table.stats td { padding:6px 0; border-bottom:1px solid var(--line); }
+  table.stats td:last-child { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; font-family:ui-monospace,Consolas,monospace; }
+  table.stats tr.total td { border-bottom:0; padding-top:10px; font-size:1rem; }
+  .win { color:var(--good); }
+  .verdict { border-left:4px solid var(--warn); }
+  .verdict p { margin:.3rem 0; }
+  .bars { display:grid; gap:14px; }
+  .barrow .lab { font-size:.85rem; color:var(--muted); margin-bottom:4px; }
+  .bar { display:flex; align-items:center; gap:8px; margin:3px 0; }
+  .bar .fill { height:18px; border-radius:4px; min-width:2px; background:var(--c); }
+  .bar .v { font-size:.82rem; font-family:ui-monospace,Consolas,monospace; white-space:nowrap; }
+  .bar .nm { width:84px; font-size:.8rem; color:var(--muted); flex:none; }
+
+  .tabs { display:flex; gap:6px; margin-bottom:10px; }
+  .tab { border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:8px; padding:6px 12px;
+         cursor:pointer; font:inherit; font-size:.88rem; }
+  .tab[aria-selected=true] { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .align { font-family:ui-monospace,Consolas,monospace; font-size:.95rem; overflow-x:auto; padding:10px;
+           background:var(--code); border-radius:8px; margin-bottom:12px; white-space:pre; }
+  .align .ch { display:inline-block; width:1.15ch; text-align:center; }
+  .align .win { background:color-mix(in srgb,var(--c) 22%,transparent); }
+  .align .ok { color:var(--good); font-weight:700; }
+  .align .no { color:var(--bad); font-weight:700; }
+  .align .dim { color:var(--muted); }
+  .scroll { max-height:380px; overflow:auto; border:1px solid var(--line); border-radius:8px; }
+  table.trace { width:100%; border-collapse:collapse; font-size:.88rem; }
+  table.trace th { position:sticky; top:0; background:var(--card); text-align:left; padding:7px 10px;
+                   border-bottom:1px solid var(--line); font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+  table.trace td { padding:6px 10px; border-bottom:1px solid var(--line); font-family:ui-monospace,Consolas,monospace; }
+  table.trace tr { cursor:pointer; }
+  table.trace tr:hover { background:var(--code); }
+  table.trace tr.sel { outline:2px solid var(--c); outline-offset:-2px; }
+  table.trace tr.match td:last-child { color:var(--good); font-weight:700; }
+  table.trace tr.spur { background:color-mix(in srgb,var(--warn) 16%,transparent); }
+  table.trace tr.spur td:last-child { color:var(--warn); font-weight:700; }
+  details { margin-top:4px; } summary { cursor:pointer; color:var(--muted); font-size:.9rem; }
+  code { background:var(--code); padding:1px 5px; border-radius:4px; font-size:.88em; }
+  .navrow { display:flex; gap:8px; align-items:center; margin:0 0 10px; flex-wrap:wrap; }
+  .navrow button { border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:8px; padding:5px 12px; cursor:pointer; font:inherit; font-size:.85rem; }
+  .navrow button:hover { border-color:var(--ink); }
+  .navrow .pos { color:var(--muted); font-size:.85rem; margin-left:4px; }
+  .textview { font-family:ui-monospace,Consolas,monospace; background:var(--code); border-radius:8px; padding:10px; word-break:break-all; line-height:1.7; font-size:.92rem; }
+  .textview mark { background:color-mix(in srgb,var(--good) 30%,transparent); color:inherit; border-radius:3px; padding:1px 0; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:.85rem; color:var(--muted); margin:0 0 10px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend svg { width:30px; height:12px; }
+  .panels { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:6px; }
+  .panels.one { grid-template-columns:minmax(0,560px); }
+  @media (max-width:720px) { .panels { grid-template-columns:1fr; } }
+  .gblock { margin-top:22px; } .gblock h3 { font-size:.98rem; margin:0 0 2px; } .gblock p { margin:0 0 10px; color:var(--muted); font-size:.88rem; }
+  svg.chart { width:100%; height:auto; background:var(--bg); border:1px solid var(--line); border-radius:10px; }
+  svg.chart text { fill:var(--muted); font:11px system-ui,sans-serif; }
+  svg.chart text.ttl { fill:var(--ink); font-weight:700; font-size:12px; }
+  svg.chart .grid { stroke:var(--line); stroke-width:1; }
+  svg.chart .ln { fill:none; stroke-width:2.2; stroke-linejoin:round; }
+  .ln.naive,.mk.naive { stroke:var(--naive); } .ln.rk,.mk.rk { stroke:var(--rk); } .ln.ref { stroke:var(--muted); }
+  .mk.naive.f { fill:var(--naive); } .mk.rk.f { fill:var(--rk); } .mk.h { fill:var(--bg); stroke-width:2; }
+  .gstatus { color:var(--muted); font-size:.88rem; margin-left:8px; }
+  footer { color:var(--muted); font-size:.82rem; margin-top:24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Naive vs Rabin-Karp string matching</h1>
+      <p class="sub">Run both algorithms on the same text and pattern and compare the work each one does.</p>
+    </div>
+    <button class="theme" id="theme" type="button">Toggle theme</button>
+  </header>
+
+  <section class="card">
+    <h2>Input</h2>
+    <div class="grid g2">
+      <div><label for="text">Text T</label><textarea id="text" spellcheck="false"></textarea></div>
+      <div><label for="pat">Pattern P</label><textarea id="pat" spellcheck="false"></textarea></div>
+    </div>
+    <div class="row">
+      <div style="flex:2;min-width:200px">
+        <label for="preset">Example</label>
+        <select id="preset"></select>
+      </div>
+      <div style="width:100px"><label for="d">Radix d</label><input type="number" id="d" min="2" value="256"></div>
+      <div style="width:100px"><label for="q">Modulus q</label><input type="number" id="q" min="2" value="101"></div>
+      <button class="primary" id="run" type="button">Compare</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+    <div class="hint">Matching is exact and case-sensitive. Shifts are counted from 0. Hashes use each character's code, as in <code>matchers.py</code>.</div>
+  </section>
+
+  <div id="out" hidden>
+    <div class="cols">
+      <section class="card alg" style="--c:var(--naive)">
+        <h2>Naive <span class="tag">compares characters at every shift</span></h2>
+        <div class="matches" id="m-naive"></div>
+        <table class="stats" id="s-naive"></table>
+      </section>
+      <section class="card alg" style="--c:var(--rk)">
+        <h2>Rabin-Karp <span class="tag">compares hashes, then verifies</span></h2>
+        <div class="matches" id="m-rk"></div>
+        <table class="stats" id="s-rk"></table>
+      </section>
+    </div>
+
+    <section class="card" id="textcard">
+      <h2>Where the matches are</h2>
+      <div class="textview" id="textview"></div>
+    </section>
+
+    <section class="card verdict">
+      <h2>What this shows</h2>
+      <div id="verdict"></div>
+    </section>
+
+    <section class="card">
+      <h2>Counted operations</h2>
+      <div class="bars" id="bars"></div>
+    </section>
+
+    <section class="card">
+      <h2>Step by step</h2>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-naive" aria-selected="true">Naive</button>
+        <button class="tab" role="tab" id="tab-rk" aria-selected="false">Rabin-Karp</button>
+      </div>
+      <div class="navrow"><button id="prev" type="button">◀ Prev shift</button><button id="next" type="button">Next shift ▶</button><span class="pos" id="pos"></span></div>
+      <div class="align" id="align"></div>
+      <div class="scroll"><table class="trace" id="trace"></table></div>
+      <div class="hint" id="trace-note">Click a row to see the pattern lined up at that shift.</div>
+    </section>
+  </div>
+
+  <section class="card" id="graphs">
+    <h2>Graphs <button class="tab" id="regraph" type="button" style="margin-left:8px">Run again</button><span class="gstatus" id="gstatus"></span></h2>
+    <p class="hint" style="margin-top:-4px;margin-bottom:6px">The same three experiments as <code>benchmark.py</code>, run here in your browser. Operation counts for the three fixed inputs are exact and match the saved Python charts. The random text uses this page's own generator, so those counts differ a little from the Python ones. Times are measured in JavaScript on your machine, so they will not match the Python timings.</p>
+    <div class="legend">
+      <span><svg viewBox="0 0 30 12"><line x1="0" y1="6" x2="30" y2="6" class="ln naive" style="stroke-width:2.2"/><circle cx="15" cy="6" r="3.5" class="mk naive f"/></svg>Naive: character comparisons</span>
+      <span><svg viewBox="0 0 30 12"><line x1="0" y1="6" x2="30" y2="6" class="ln rk" style="stroke-width:2.2"/><rect x="11.5" y="2.5" width="7" height="7" class="mk rk f"/></svg>Rabin-Karp: character comparisons</span>
+      <span><svg viewBox="0 0 30 12"><line x1="0" y1="6" x2="30" y2="6" class="ln rk" style="stroke-width:2.2;stroke-dasharray:5 3"/><rect x="11.5" y="2.5" width="7" height="7" class="mk rk h"/></svg>Rabin-Karp: all counted operations</span>
+    </div>
+    <div id="gout"></div>
+  </section>
+
+  <footer>Same algorithms and counters as <code>matchers.py</code>. Operation counts are exact. The timing graphs are measured live in your browser and vary from run to run.</footer>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   The two algorithms. These mirror matchers.py line for line, and also
+   record one row per shift so the page can show the step-by-step trace.
+   Strings are split with Array.from so each character is one code point,
+   like Python's str.
+------------------------------------------------------------------- */
+function naiveSearch(text, pattern) {
+  const T = Array.from(text), P = Array.from(pattern);
+  const n = T.length, m = P.length;
+  const r = { n, m, matches: [], charComparisons: 0, hashComparisons: 0, hashUpdates: 0,
+              preprocessingOps: 0, spuriousHits: 0, rows: [] };
+  for (let s = 0; s <= n - m; s++) {
+    let j = 0, cmp = 0;
+    while (j < m) {
+      r.charComparisons++; cmp++;
+      if (T[s + j] !== P[j]) break;
+      j++;
+    }
+    const ok = j === m;
+    if (ok) r.matches.push(s);
+    r.rows.push({ s, cmp, j, ok });
+  }
+  return r;
+}
+
+function rabinKarpSearch(text, pattern, d = 256, q = 101) {
+  const T = Array.from(text), P = Array.from(pattern);
+  const n = T.length, m = P.length;
+  const r = { n, m, matches: [], charComparisons: 0, hashComparisons: 0, hashUpdates: 0,
+              preprocessingOps: 0, spuriousHits: 0, rows: [] };
+  if (m > n) return r;
+  const cp = (c) => c.codePointAt(0);
+  // h = d^(m-1) mod q, using BigInt so large d, q can never overflow
+  let h = 1n; const D = BigInt(d), Q = BigInt(q);
+  for (let i = 0; i < m - 1; i++) h = (h * D) % Q;
+  const mod = (a) => ((a % Q) + Q) % Q;     // Python's % is never negative
+  let p = 0n, t = 0n;
+  for (let i = 0; i < m; i++) {
+    p = mod(D * p + BigInt(cp(P[i])));
+    t = mod(D * t + BigInt(cp(T[i])));
+    r.preprocessingOps += 2;
+  }
+  for (let s = 0; s <= n - m; s++) {
+    r.hashComparisons++;
+    const row = { s, hash: Number(t), phash: Number(p), cmp: 0, outcome: 'skip' };
+    if (p === t) {
+      let j = 0;
+      while (j < m) {
+        r.charComparisons++; row.cmp++;
+        if (T[s + j] !== P[j]) break;
+        j++;
+      }
+      if (j === m) { r.matches.push(s); row.outcome = 'match'; }
+      else { r.spuriousHits++; row.outcome = 'spurious'; }
+    }
+    r.rows.push(row);
+    if (s < n - m) {
+      t = mod(D * (t - BigInt(cp(T[s])) * h) + BigInt(cp(T[s + m])));
+      r.hashUpdates++;
+    }
+  }
+  return r;
+}
+const totalOps = (r) => r.charComparisons + r.hashComparisons + r.hashUpdates + r.preprocessingOps;
+
+/* ------------------------------------------------------------------
+   Page code
+------------------------------------------------------------------- */
+const PRESETS = [
+  { name: 'Choose an example…', text: '', pat: '' },
+  { name: '1. abracadabra / abra (two matches)', text: 'abracadabra', pat: 'abra', d: 256, q: 101 },
+  { name: '2. Naive worst case: aaaa…a / aaaab', text: 'a'.repeat(20), pat: 'aaaab', d: 256, q: 101 },
+  { name: '3. Spurious hit (textbook, d=10, q=13)', text: '2359023141526739921', pat: '31415', d: 10, q: 13 },
+  { name: '4. Every window matches: aaaa…a / aaaa', text: 'a'.repeat(20), pat: 'aaaa', d: 256, q: 101 },
+];
+const $ = (id) => document.getElementById(id);
+const fmt = (x) => x.toLocaleString('en-US');
+let current = null, view = 'naive', selected = 0;
+
+PRESETS.forEach((p, i) => { const o = document.createElement('option'); o.value = i; o.textContent = p.name; $('preset').appendChild(o); });
+$('preset').addEventListener('change', () => {
+  const p = PRESETS[+$('preset').value]; if (!p.text) return;
+  $('text').value = p.text; $('pat').value = p.pat; $('d').value = p.d; $('q').value = p.q; run();
+});
+$('run').addEventListener('click', () => run());
+let liveTimer = null;
+['text', 'pat', 'd', 'q'].forEach((id) => $(id).addEventListener('input', () => {
+  clearTimeout(liveTimer); liveTimer = setTimeout(() => run(true), 300);
+}));
+['text', 'pat'].forEach((id) => $(id).addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) run(); }));
+$('prev').addEventListener('click', () => step(-1));
+$('next').addEventListener('click', () => step(1));
+$('tab-naive').addEventListener('click', () => setView('naive'));
+$('tab-rk').addEventListener('click', () => setView('rk'));
+$('theme').addEventListener('click', () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+});
+
+function matchesText(ms) {
+  if (!ms.length) return 'no matches';
+  const shown = ms.slice(0, 30).join(', ');
+  return `${ms.length} match${ms.length > 1 ? 'es' : ''} at shift${ms.length > 1 ? 's' : ''} ${shown}${ms.length > 30 ? ', …' : ''}`;
+}
+
+function statsTable(el, rows, winKeys, other, me) {
+  el.innerHTML = rows.map(([label, key, val]) => {
+    const better = winKeys.includes(key) && me[key] < other[key];
+    const total = key === 'total' ? ' class="total"' : '';
+    return `<tr${total}><td>${label}</td><td class="${better ? 'win' : ''}">${fmt(val)}${better ? ' ✓' : ''}</td></tr>`;
+  }).join('');
+}
+
+function run(live) {
+  const err = $('err'); err.textContent = '';
+  const text = $('text').value, pat = $('pat').value;
+  const d = parseInt($('d').value, 10), q = parseInt($('q').value, 10);
+  const bad = (msg) => { if (!live) err.textContent = msg; };
+  if (!pat) { bad('The pattern cannot be empty.'); return; }
+  if (!(d >= 2)) { bad('Radix d must be a whole number of at least 2.'); return; }
+  if (!(q >= 2)) { bad('Modulus q must be a whole number of at least 2.'); return; }
+  if (Array.from(text).length > 20000) { bad('Please keep the text under 20,000 characters.'); return; }
+
+  const a = naiveSearch(text, pat), b = rabinKarpSearch(text, pat, d, q);
+  a.total = totalOps(a); b.total = totalOps(b);
+  current = { text, pat, a, b, d, q }; selected = 0;
+  $('out').hidden = false;
+
+  $('m-naive').textContent = matchesText(a.matches);
+  $('m-rk').textContent = matchesText(b.matches);
+  const same = JSON.stringify(a.matches) === JSON.stringify(b.matches);
+
+  statsTable($('s-naive'), [
+    ['Character comparisons', 'charComparisons', a.charComparisons],
+    ['Shifts tried', 'shifts', Math.max(0, a.n - a.m + 1)],
+    ['Total counted operations', 'total', a.total],
+  ], ['charComparisons', 'total'], b, a);
+  statsTable($('s-rk'), [
+    ['Character comparisons', 'charComparisons', b.charComparisons],
+    ['Hash comparisons', 'hashComparisons', b.hashComparisons],
+    ['Rolling-hash updates', 'hashUpdates', b.hashUpdates],
+    ['Preprocessing operations', 'preprocessingOps', b.preprocessingOps],
+    ['Spurious hits', 'spuriousHits', b.spuriousHits],
+    ['Total counted operations', 'total', b.total],
+  ], ['charComparisons', 'total'], a, b);
+
+  // text with matches highlighted
+  const TT = Array.from(text), flag = new Array(TT.length).fill(false);
+  a.matches.forEach((st) => { for (let k = st; k < st + a.m && k < TT.length; k++) flag[k] = true; });
+  if (TT.length > 600) {
+    $('textview').textContent = `The text has ${fmt(TT.length)} characters, too long to show here. See the shift numbers above.`;
+  } else {
+    let html = '', open = false;
+    TT.forEach((ch, i) => {
+      if (flag[i] && !open) { html += '<mark>'; open = true; }
+      if (!flag[i] && open) { html += '</mark>'; open = false; }
+      html += esc(ch);
+    });
+    $('textview').innerHTML = (html + (open ? '</mark>' : '')) || '(empty text)';
+  }
+
+  // verdict, worded from the actual numbers
+  const v = [];
+  v.push(same ? `<p>Both algorithms found the same ${a.matches.length ? 'matches' : 'result (no matches)'}.</p>`
+              : `<p><b>Warning:</b> the two algorithms disagree. This should never happen.</p>`);
+  if (b.charComparisons < a.charComparisons)
+    v.push(`<p>Rabin-Karp made <b>${fmt(a.charComparisons - b.charComparisons)} fewer</b> character comparisons (${fmt(b.charComparisons)} against ${fmt(a.charComparisons)}), because it only looks at characters when a hash matches.</p>`);
+  else if (b.charComparisons === a.charComparisons)
+    v.push(`<p>Both made ${fmt(a.charComparisons)} character comparisons, so hashing saved nothing on this input.</p>`);
+  else
+    v.push(`<p>Rabin-Karp made more character comparisons (${fmt(b.charComparisons)} against ${fmt(a.charComparisons)}) because it had to check the same windows again after matching hashes.</p>`);
+  if (b.total < a.total)
+    v.push(`<p>Counting everything, Rabin-Karp also did less in total (${fmt(b.total)} against ${fmt(a.total)}).</p>`);
+  else
+    v.push(`<p>Counting every operation, Rabin-Karp did <b>more</b> work in total (${fmt(b.total)} against ${fmt(a.total)}), because it hashes every window. Fewer character comparisons does not automatically mean less work.</p>`);
+  if (b.spuriousHits > 0)
+    v.push(`<p>Spurious hits: ${b.spuriousHits}. The hash matched but the characters did not, so verification rejected ${b.spuriousHits === 1 ? 'it' : 'them'}.</p>`);
+  $('verdict').innerHTML = v.join('');
+
+  // bars
+  const mx = Math.max(a.charComparisons, b.charComparisons, a.total, b.total, 1);
+  const bar = (name, val, c) => `<div class="bar" style="--c:var(--${c})"><span class="nm">${name}</span>
+      <span class="fill" style="width:${Math.max(0.4, val / mx * 100) * 0.7}%"></span><span class="v">${fmt(val)}</span></div>`;
+  $('bars').innerHTML =
+    `<div class="barrow"><div class="lab">Character comparisons</div>${bar('Naive', a.charComparisons, 'naive')}${bar('Rabin-Karp', b.charComparisons, 'rk')}</div>
+     <div class="barrow"><div class="lab">All counted operations</div>${bar('Naive', a.total, 'naive')}${bar('Rabin-Karp', b.total, 'rk')}</div>`;
+
+  setView(view);
+}
+
+function setView(v) {
+  view = v; selected = 0;
+  $('tab-naive').setAttribute('aria-selected', v === 'naive');
+  $('tab-rk').setAttribute('aria-selected', v === 'rk');
+  if (current) renderTrace();
+}
+
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const vis = (s) => (s === ' ' ? '·' : s);
+
+function renderTrace() {
+  const { text, pat } = current;
+  const r = view === 'naive' ? current.a : current.b;
+  const T = Array.from(text), P = Array.from(pat);
+  const c = view === 'naive' ? 'var(--naive)' : 'var(--rk)';
+  $('trace').parentElement.style.setProperty('--c', c);
+  $('pos').textContent = '';
+  $('align').style.setProperty('--c', c);
+  const LIMIT = 400, rows = r.rows.slice(0, LIMIT);
+  const head = view === 'naive'
+    ? '<tr><th>Shift</th><th>Window</th><th>Char. comparisons</th><th>Result</th></tr>'
+    : '<tr><th>Shift</th><th>Window</th><th>Window hash</th><th>vs pattern hash</th><th>Result</th></tr>';
+  const body = rows.map((row, i) => {
+    const w = esc(T.slice(row.s, row.s + r.m).map(vis).join(''));
+    if (view === 'naive')
+      return `<tr data-i="${i}" class="${row.ok ? 'match' : ''}"><td>${row.s}</td><td>${w}</td><td>${row.cmp}</td><td>${row.ok ? 'MATCH' : 'mismatch'}</td></tr>`;
+    const eq = row.hash === row.phash;
+    const res = row.outcome === 'match' ? 'MATCH (verified)' : row.outcome === 'spurious' ? 'SPURIOUS HIT' : 'hashes differ, skip';
+    return `<tr data-i="${i}" class="${row.outcome === 'match' ? 'match' : row.outcome === 'spurious' ? 'spur' : ''}"><td>${row.s}</td><td>${w}</td><td>${row.hash}</td><td>${eq ? '= ' : '≠ '}${row.phash}</td><td>${res}</td></tr>`;
+  }).join('');
+  $('trace').innerHTML = head + body;
+  $('trace').querySelectorAll('tr[data-i]').forEach((tr) => tr.addEventListener('click', () => { selected = +tr.dataset.i; drawAlign(); }));
+  $('prev').disabled = $('next').disabled = !rows.length;
+  $('trace-note').textContent = r.rows.length > LIMIT
+    ? `Showing the first ${LIMIT} of ${fmt(r.rows.length)} shifts. Click a row to see the pattern lined up at that shift.`
+    : 'Click a row to see the pattern lined up at that shift.';
+  drawAlign();
+}
+
+function step(dx) {
+  if (!current) return;
+  const r = view === 'naive' ? current.a : current.b;
+  const max = Math.min(r.rows.length, 400) - 1;
+  selected = Math.max(0, Math.min(max, selected + dx));
+  drawAlign();
+  const tr = $('trace').querySelector(`tr[data-i="${selected}"]`);
+  if (tr) tr.scrollIntoView({ block: 'nearest' });
+}
+
+function drawAlign() {
+  const { text, pat } = current;
+  const r = view === 'naive' ? current.a : current.b;
+  const T = Array.from(text), P = Array.from(pat);
+  $('trace').querySelectorAll('tr').forEach((tr) => tr.classList.toggle('sel', tr.dataset.i === String(selected)));
+  const row = r.rows[selected];
+  $('pos').textContent = row ? `shift ${row.s} of ${Math.max(0, r.n - r.m)}` : '';
+  if (!row) { $('align').textContent = 'The pattern is longer than the text, so there is no shift to show.'; return; }
+  const s = row.s, from = Math.max(0, s - 12), to = Math.min(T.length, s + P.length + 12);
+  let top = '', bot = '', mid = '';
+  const cell = (cls, ch) => `<span class="ch ${cls}">${ch === ' ' ? '&nbsp;' : esc(vis(ch))}</span>`;
+  const vcell = (cls, ch) => `<span class="ch ${cls}">${esc(vis(ch))}</span>`;
+  const compared = view === 'naive' ? row.cmp : row.cmp; // characters actually compared at this shift
+  for (let i = from; i < to; i++) {
+    const inWin = i >= s && i < s + P.length, k = i - s;
+    top += vcell(inWin ? 'win' : 'dim', T[i]);
+    bot += inWin ? vcell('win', P[k]) : cell('', ' ');
+    if (inWin && k < compared) mid += vcell(T[i] === P[k] ? 'ok' : 'no', T[i] === P[k] ? '✓' : '✗');
+    else mid += cell('', ' ');
+  }
+  const pad = (from > 0 ? '… ' : '  '), tail = (to < T.length ? ' …' : '');
+  const note = view === 'naive'
+    ? `${row.cmp} character comparison${row.cmp === 1 ? '' : 's'} at this shift`
+    : row.outcome === 'skip' ? 'hashes differ, so no characters are compared'
+      : `hashes equal, so ${row.cmp} character comparison${row.cmp === 1 ? '' : 's'} to verify`;
+  $('align').innerHTML = `shift ${s}: ${note}\ntext     ${pad}${top}${tail}\n         ${'  '}${mid}\npattern  ${'  '}${bot}`;
+}
+
+
+/* ------------------------------------------------------------------
+   Graphs: the three experiments from benchmark.py, drawn as SVG
+------------------------------------------------------------------- */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const randStr = (n, al, rng) => { let o = ''; for (let i = 0; i < n; i++) o += al[Math.floor(rng() * al.length)]; return o; };
+const ALPHA26 = 'abcdefghijklmnopqrstuvwxyz';
+const SCEN = [
+  ['random', 'Random text (average case)', (n, m, r) => [randStr(n, ALPHA26, r), randStr(m, ALPHA26, r)]],
+  ['best', 'Best case for Naive', (n, m) => ['a'.repeat(n), 'b' + 'a'.repeat(m - 1)]],
+  ['worst', 'Worst case for Naive', (n, m) => ['a'.repeat(n), 'a'.repeat(m - 1) + 'b']],
+  ['all', 'Every window matches (worst for both)', (n, m) => ['a'.repeat(n), 'a'.repeat(m)]],
+];
+// Lean versions with no bookkeeping, used only for timing
+function naiveLean(T, P) { const n = T.length, m = P.length; let c = 0;
+  for (let s = 0; s <= n - m; s++) { let j = 0; while (j < m && T.charCodeAt(s + j) === P.charCodeAt(j)) j++; if (j === m) c++; } return c; }
+function rkLean(T, P, d, q) { const n = T.length, m = P.length; if (m > n) return 0;
+  let h = 1; for (let i = 0; i < m - 1; i++) h = (h * d) % q;
+  let p = 0, t = 0; for (let i = 0; i < m; i++) { p = (d * p + P.charCodeAt(i)) % q; t = (d * t + T.charCodeAt(i)) % q; }
+  let c = 0;
+  for (let s = 0; s <= n - m; s++) {
+    if (p === t) { let j = 0; while (j < m && T.charCodeAt(s + j) === P.charCodeAt(j)) j++; if (j === m) c++; }
+    if (s < n - m) { t = ((d * (t - T.charCodeAt(s) * h) + T.charCodeAt(s + m)) % q + q) % q; }
+  } return c; }
+function bestMs(fn) { let best = Infinity;
+  { const w0 = performance.now(); while (performance.now() - w0 < 12) fn(); }   // warm-up so the JIT has compiled the code
+  for (let k = 0; k < 3; k++) { let it = 0; const t0 = performance.now(); let el;
+    do { fn(); it++; el = performance.now() - t0; } while (el < 6);
+    best = Math.min(best, el / it); }
+  return best; }
+
+const short = (v) => v >= 1e6 ? +(v / 1e6).toFixed(1) + 'M' : v >= 1e4 ? +(v / 1e3).toFixed(0) + 'k' : v >= 1e3 ? +(v / 1e3).toFixed(1) + 'k' : +v.toFixed(2) + '';
+function niceMax(v) { if (v <= 0) return 1; const e = Math.pow(10, Math.floor(Math.log10(v))), f = v / e;
+  const nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10; return [nf * e, nf === 2 ? 4 : 5]; }
+
+/* series: [{cls:'naive'|'rk'|'ref', dash, shape:'c'|'s'|'h', ys:[...]}], xs numeric, xlabels text per x */
+function chartSVG(title, xs, xlabels, series, xTitle, yTitle) {
+  const W = 440, H = 270, L = 58, R = 14, T = 34, B = 52, pw = W - L - R, ph = H - T - B;
+  const maxY = Math.max(1, ...series.flatMap((s) => s.ys));
+  const [top, div] = niceMax(maxY * 1.02);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const X = (v) => L + (x1 === x0 ? pw / 2 : (v - x0) / (x1 - x0) * pw), Y = (v) => T + ph - v / top * ph;
+  let g = `<text class="ttl" x="${L - 46}" y="18">${esc(title)}</text>`;
+  for (let i = 0; i <= div; i++) { const v = top * i / div;
+    g += `<line class="grid" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${short(v)}</text>`; }
+  xs.forEach((v, i) => { g += `<text x="${X(v)}" y="${H - B + 16}" text-anchor="middle">${esc(xlabels[i])}</text>`; });
+  g += `<text x="${L + pw / 2}" y="${H - 8}" text-anchor="middle">${esc(xTitle)}</text>`;
+  g += `<text x="12" y="${T + ph / 2}" text-anchor="middle" transform="rotate(-90 12 ${T + ph / 2})">${esc(yTitle)}</text>`;
+  series.forEach((s) => {
+    g += `<polyline class="ln ${s.cls}" ${s.dash ? 'stroke-dasharray="6 4"' : ''} points="${xs.map((v, i) => X(v).toFixed(1) + ',' + Y(s.ys[i]).toFixed(1)).join(' ')}"/>`;
+    xs.forEach((v, i) => {
+      const cx = X(v).toFixed(1), cy = Y(s.ys[i]).toFixed(1), k = `mk ${s.cls} ${s.shape === 'h' ? 'h' : 'f'}`;
+      g += s.shape === 'c' ? `<circle class="${k}" cx="${cx}" cy="${cy}" r="3.6"/>` : `<rect class="${k}" x="${cx - 3.6}" y="${cy - 3.6}" width="7.2" height="7.2"/>`;
+    });
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${g}</svg>`;
+}
+const SER = (nv, rk, all) => [
+  { cls: 'naive', shape: 'c', ys: nv }, { cls: 'rk', shape: 's', ys: rk }, ...(all ? [{ cls: 'rk', shape: 'h', dash: true, ys: all }] : []),
+];
+
+let graphRun = 0;
+async function runGraphs() {
+  const id = ++graphRun, tick = () => new Promise((r) => setTimeout(r, 0));
+  $('gstatus').textContent = 'Running experiments…'; $('gout').innerHTML = '';
+  const NS = [1000, 2000, 4000, 8000, 16000], M = 20, data = {};
+  const rng = mulberry32(2026);
+  for (const [key, , make] of SCEN) {
+    const o = { c: [], k: [], a: [], tn: [], tk: [] };
+    for (const n of NS) {
+      const [t, p] = make(n, M, rng);
+      const A = naiveSearch(t, p), B = rabinKarpSearch(t, p, 256, 101);
+      o.c.push(A.charComparisons); o.k.push(B.charComparisons); o.a.push(totalOps(B));
+      o.tn.push(bestMs(() => naiveLean(t, p))); o.tk.push(bestMs(() => rkLean(t, p, 256, 101)));
+      if (id !== graphRun) return;
+    }
+    data[key] = o; await tick();
+  }
+  const xl = NS.map((n) => short(n));
+  const p1 = SCEN.map(([k, label]) => chartSVG(label, NS, xl, SER(data[k].c, data[k].k, data[k].a), 'text length n', 'operations')).join('');
+  const p2 = SCEN.map(([k, label]) => chartSVG(label, NS, xl, [
+    { cls: 'naive', shape: 'c', ys: data[k].tn }, { cls: 'rk', shape: 's', ys: data[k].tk }], 'text length n', 'time (ms)')).join('');
+
+  // Experiment 2: spurious hits against q
+  const r2 = mulberry32(2027), QS = [3, 5, 7, 11, 13, 31, 61, 101, 251, 503, 1009, 10007];
+  const t2 = randStr(20000, 'abcdefghij', r2), p2s = randStr(6, 'abcdefghij', r2);
+  const sp = QS.map((q) => rabinKarpSearch(t2, p2s, 256, q).spuriousHits), est = QS.map((q) => (20000 - 6 + 1) / q);
+  const p3 = chartSVG('Spurious hits against the modulus q', QS.map((_, i) => i), QS.map(String),
+    [{ cls: 'ref', shape: 'h', dash: true, ys: est }, { cls: 'rk', shape: 's', ys: sp }], 'modulus q (n = 20,000, m = 6)', 'spurious hits');
+
+  // Experiment 3: pattern length
+  const MS = [2, 5, 10, 20, 40, 80, 160], N3 = 10000, e3 = { c: [], k: [], a: [] };
+  MS.forEach((m) => { const t = 'a'.repeat(N3), p = 'a'.repeat(m - 1) + 'b';
+    const A = naiveSearch(t, p), B = rabinKarpSearch(t, p, 256, 101);
+    e3.c.push(A.charComparisons); e3.k.push(B.charComparisons); e3.a.push(totalOps(B)); });
+  const p4 = chartSVG('Operations against pattern length m', MS.map((_, i) => i), MS.map(String), SER(e3.c, e3.k, e3.a), 'pattern length m (n = 10,000, Naive worst case)', 'operations');
+  if (id !== graphRun) return;
+
+  $('gout').innerHTML = `
+    <div class="gblock"><h3>1. Operations as the text grows (m = 20)</h3><p>Rabin-Karp's dashed line is all its work including hashing. It stays about 2n whatever the input.</p><div class="panels">${p1}</div></div>
+    <div class="gblock"><h3>2. Running time as the text grows</h3><p>Measured here in JavaScript (best of 3 timings). Use it for the shape, not the exact milliseconds.</p><div class="panels">${p2}</div></div>
+    <div class="gblock"><h3>3. Spurious hits against q, and 4. Effect of the pattern length</h3><p>Left: the grey dashed line is the estimate (n − m + 1) / q, so a larger q means fewer false alarms. Right: Naive's cost grows with m on this input, while Rabin-Karp's total stays the same.</p><div class="panels">${p3}${p4}</div></div>`;
+  $('gstatus').textContent = '';
+  window.__graphData = { data, sp, e3 };
+}
+$('regraph').addEventListener('click', runGraphs);
+
+// start with the first example loaded
+(function init() { $('preset').value = 1; $('preset').dispatchEvent(new Event('change')); setTimeout(runGraphs, 50); })();
+if (typeof module !== 'undefined') module.exports = { naiveSearch, rabinKarpSearch, totalOps };
+</script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+========================================================================
+SCENARIO 1: ordinary text, pattern occurs several times
+========================================================================
+  Text    (n=23): abracadabra#abracadabra
+  Pattern (m=4): abra
+  Rabin-Karp parameters: d=256, q=101
+
+NAIVE trace   n=23  m=4  shifts to try = n-m+1 = 20
+  T =  abracadabra#abracadabra
+  s=0  ^^^^                   
+       compares: a==a b==b r==r a==a  -> 4 comparison(s), MATCH
+  s=1   ^^^^                  
+       compares: b!=a  -> 1 comparison(s), mismatch
+  s=2    ^^^^                 
+       compares: r!=a  -> 1 comparison(s), mismatch
+  s=3     ^^^^                
+       compares: a==a c!=b  -> 2 comparison(s), mismatch
+  s=4      ^^^^               
+       compares: c!=a  -> 1 comparison(s), mismatch
+  s=5       ^^^^              
+       compares: a==a d!=b  -> 2 comparison(s), mismatch
+  s=6        ^^^^             
+       compares: d!=a  -> 1 comparison(s), mismatch
+  s=7         ^^^^            
+       compares: a==a b==b r==r a==a  -> 4 comparison(s), MATCH
+  s=8          ^^^^           
+       compares: b!=a  -> 1 comparison(s), mismatch
+  s=9           ^^^^          
+       compares: r!=a  -> 1 comparison(s), mismatch
+  s=10           ^^^^         
+       compares: a==a #!=b  -> 2 comparison(s), mismatch
+  s=11            ^^^^        
+       compares: #!=a  -> 1 comparison(s), mismatch
+  s=12             ^^^^       
+       compares: a==a b==b r==r a==a  -> 4 comparison(s), MATCH
+  s=13              ^^^^      
+       compares: b!=a  -> 1 comparison(s), mismatch
+  s=14               ^^^^     
+       compares: r!=a  -> 1 comparison(s), mismatch
+  s=15                ^^^^    
+       compares: a==a c!=b  -> 2 comparison(s), mismatch
+  s=16                 ^^^^   
+       compares: c!=a  -> 1 comparison(s), mismatch
+  s=17                  ^^^^  
+       compares: a==a d!=b  -> 2 comparison(s), mismatch
+  s=18                   ^^^^ 
+       compares: d!=a  -> 1 comparison(s), mismatch
+  s=19                    ^^^^
+       compares: a==a b==b r==r a==a  -> 4 comparison(s), MATCH
+  Result: matches at [0, 7, 12, 19]   total character comparisons = 37
+
+RABIN-KARP trace   n=23  m=4  d=256  q=101
+  h = d^(m-1) mod q = 5      hash(P) = 10
+  T = abracadabra#abracadabra
+  s=0  window='abra'  hash=10  == 10  -> hashes equal, verified 4 chars: MATCH
+       roll: drop 'a', add 'c'  -> next hash = 2
+  s=1  window='brac'  hash=2   != 10  -> hashes differ, NO character comparison
+       roll: drop 'b', add 'a'  -> next hash = 5
+  s=2  window='raca'  hash=5   != 10  -> hashes differ, NO character comparison
+       roll: drop 'r', add 'd'  -> next hash = 92
+  s=3  window='acad'  hash=92  != 10  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 85
+  s=4  window='cada'  hash=85  != 10  -> hashes differ, NO character comparison
+       roll: drop 'c', add 'b'  -> next hash = 77
+  s=5  window='adab'  hash=77  != 10  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'r'  -> next hash = 100
+  s=6  window='dabr'  hash=100 != 10  -> hashes differ, NO character comparison
+       roll: drop 'd', add 'a'  -> next hash = 10
+  s=7  window='abra'  hash=10  == 10  -> hashes equal, verified 4 chars: MATCH
+       roll: drop 'a', add '#'  -> next hash = 39
+  s=8  window='bra#'  hash=39  != 10  -> hashes differ, NO character comparison
+       roll: drop 'b', add 'a'  -> next hash = 84
+  s=9  window='ra#a'  hash=84  != 10  -> hashes differ, NO character comparison
+       roll: drop 'r', add 'b'  -> next hash = 13
+  s=10 window='a#ab'  hash=13  != 10  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'r'  -> next hash = 78
+  s=11 window='#abr'  hash=78  != 10  -> hashes differ, NO character comparison
+       roll: drop '#', add 'a'  -> next hash = 10
+  s=12 window='abra'  hash=10  == 10  -> hashes equal, verified 4 chars: MATCH
+       roll: drop 'a', add 'c'  -> next hash = 2
+  s=13 window='brac'  hash=2   != 10  -> hashes differ, NO character comparison
+       roll: drop 'b', add 'a'  -> next hash = 5
+  s=14 window='raca'  hash=5   != 10  -> hashes differ, NO character comparison
+       roll: drop 'r', add 'd'  -> next hash = 92
+  s=15 window='acad'  hash=92  != 10  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 85
+  s=16 window='cada'  hash=85  != 10  -> hashes differ, NO character comparison
+       roll: drop 'c', add 'b'  -> next hash = 77
+  s=17 window='adab'  hash=77  != 10  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'r'  -> next hash = 100
+  s=18 window='dabr'  hash=100 != 10  -> hashes differ, NO character comparison
+       roll: drop 'd', add 'a'  -> next hash = 10
+  s=19 window='abra'  hash=10  == 10  -> hashes equal, verified 4 chars: MATCH
+  Result: matches at [0, 7, 12, 19]   spurious hits = 0   total character comparisons = 16
+
+  Measure                                    Naive            Rabin-Karp
+  ----------------------------------------------------------------------
+  Matches found (shifts)            [0, 7, 12, 19]        [0, 7, 12, 19]
+  Number of matches                              4                     4
+  Character comparisons                         37                    16
+  Hash comparisons                               -                    20
+  Rolling-hash updates                           -                    19
+  Preprocessing operations                       -                     8
+  Spurious hits                                  -                     0
+  Total (unweighted sum)                        37                    63
+
+  Both algorithms report identical matches: YES
+
+========================================================================
+SCENARIO 2: worst case for NAIVE (almost-matching at every shift)
+========================================================================
+  Text    (n=20): aaaaaaaaaaaaaaaaaaaa
+  Pattern (m=5): aaaab
+  Rabin-Karp parameters: d=256, q=101
+
+NAIVE trace   n=20  m=5  shifts to try = n-m+1 = 16
+  T =  aaaaaaaaaaaaaaaaaaaa
+  s=0  ^^^^^               
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=1   ^^^^^              
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=2    ^^^^^             
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=3     ^^^^^            
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=4      ^^^^^           
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=5       ^^^^^          
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=6        ^^^^^         
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=7         ^^^^^        
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=8          ^^^^^       
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=9           ^^^^^      
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=10           ^^^^^     
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=11            ^^^^^    
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=12             ^^^^^   
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=13              ^^^^^  
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=14               ^^^^^ 
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  s=15                ^^^^^
+       compares: a==a a==a a==a a==a a!=b  -> 5 comparison(s), mismatch
+  Result: matches at []   total character comparisons = 80
+
+RABIN-KARP trace   n=20  m=5  d=256  q=101
+  h = d^(m-1) mod q = 68      hash(P) = 46
+  T = aaaaaaaaaaaaaaaaaaaa
+  s=0  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=1  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=2  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=3  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=4  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=5  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=6  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=7  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=8  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=9  window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=10 window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=11 window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=12 window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=13 window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=14 window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+       roll: drop 'a', add 'a'  -> next hash = 45
+  s=15 window='aaaaa'  hash=45  != 46  -> hashes differ, NO character comparison
+  Result: matches at []   spurious hits = 0   total character comparisons = 0
+
+  Measure                                    Naive            Rabin-Karp
+  ----------------------------------------------------------------------
+  Matches found (shifts)                        []                    []
+  Number of matches                              0                     0
+  Character comparisons                         80                     0
+  Hash comparisons                               -                    16
+  Rolling-hash updates                           -                    15
+  Preprocessing operations                       -                    10
+  Spurious hits                                  -                     0
+  Total (unweighted sum)                        80                    41
+
+  Both algorithms report identical matches: YES
+
+========================================================================
+SCENARIO 3: digit text, d=10, q=13 -> Rabin-Karp spurious hit
+========================================================================
+  Text    (n=19): 2359023141526739921
+  Pattern (m=5): 31415
+  Rabin-Karp parameters: d=10, q=13
+
+NAIVE trace   n=19  m=5  shifts to try = n-m+1 = 15
+  T =  2359023141526739921
+  s=0  ^^^^^              
+       compares: 2!=3  -> 1 comparison(s), mismatch
+  s=1   ^^^^^             
+       compares: 3==3 5!=1  -> 2 comparison(s), mismatch
+  s=2    ^^^^^            
+       compares: 5!=3  -> 1 comparison(s), mismatch
+  s=3     ^^^^^           
+       compares: 9!=3  -> 1 comparison(s), mismatch
+  s=4      ^^^^^          
+       compares: 0!=3  -> 1 comparison(s), mismatch
+  s=5       ^^^^^         
+       compares: 2!=3  -> 1 comparison(s), mismatch
+  s=6        ^^^^^        
+       compares: 3==3 1==1 4==4 1==1 5==5  -> 5 comparison(s), MATCH
+  s=7         ^^^^^       
+       compares: 1!=3  -> 1 comparison(s), mismatch
+  s=8          ^^^^^      
+       compares: 4!=3  -> 1 comparison(s), mismatch
+  s=9           ^^^^^     
+       compares: 1!=3  -> 1 comparison(s), mismatch
+  s=10           ^^^^^    
+       compares: 5!=3  -> 1 comparison(s), mismatch
+  s=11            ^^^^^   
+       compares: 2!=3  -> 1 comparison(s), mismatch
+  s=12             ^^^^^  
+       compares: 6!=3  -> 1 comparison(s), mismatch
+  s=13              ^^^^^ 
+       compares: 7!=3  -> 1 comparison(s), mismatch
+  s=14               ^^^^^
+       compares: 3==3 9!=1  -> 2 comparison(s), mismatch
+  Result: matches at [6]   total character comparisons = 21
+
+RABIN-KARP trace   n=19  m=5  d=10  q=13
+  h = d^(m-1) mod q = 3      hash(P) = 10
+  T = 2359023141526739921
+  s=0  window='23590'  hash=11  != 10  -> hashes differ, NO character comparison
+       roll: drop '2', add '2'  -> next hash = 12
+  s=1  window='35902'  hash=12  != 10  -> hashes differ, NO character comparison
+       roll: drop '3', add '3'  -> next hash = 6
+  s=2  window='59023'  hash=6   != 10  -> hashes differ, NO character comparison
+       roll: drop '5', add '1'  -> next hash = 1
+  s=3  window='90231'  hash=1   != 10  -> hashes differ, NO character comparison
+       roll: drop '9', add '4'  -> next hash = 3
+  s=4  window='02314'  hash=3   != 10  -> hashes differ, NO character comparison
+       roll: drop '0', add '1'  -> next hash = 4
+  s=5  window='23141'  hash=4   != 10  -> hashes differ, NO character comparison
+       roll: drop '2', add '5'  -> next hash = 10
+  s=6  window='31415'  hash=10  == 10  -> hashes equal, verified 5 chars: MATCH
+       roll: drop '3', add '2'  -> next hash = 11
+  s=7  window='14152'  hash=11  != 10  -> hashes differ, NO character comparison
+       roll: drop '1', add '6'  -> next hash = 7
+  s=8  window='41526'  hash=7   != 10  -> hashes differ, NO character comparison
+       roll: drop '4', add '7'  -> next hash = 8
+  s=9  window='15267'  hash=8   != 10  -> hashes differ, NO character comparison
+       roll: drop '1', add '3'  -> next hash = 0
+  s=10 window='52673'  hash=0   != 10  -> hashes differ, NO character comparison
+       roll: drop '5', add '9'  -> next hash = 1
+  s=11 window='26739'  hash=1   != 10  -> hashes differ, NO character comparison
+       roll: drop '2', add '9'  -> next hash = 10
+  s=12 window='67399'  hash=10  == 10  -> hashes equal, verified 1 char(s): strings differ => SPURIOUS HIT
+       roll: drop '6', add '2'  -> next hash = 12
+  s=13 window='73992'  hash=12  != 10  -> hashes differ, NO character comparison
+       roll: drop '7', add '1'  -> next hash = 1
+  s=14 window='39921'  hash=1   != 10  -> hashes differ, NO character comparison
+  Result: matches at [6]   spurious hits = 1   total character comparisons = 6
+
+  Measure                                    Naive            Rabin-Karp
+  ----------------------------------------------------------------------
+  Matches found (shifts)                       [6]                   [6]
+  Number of matches                              1                     1
+  Character comparisons                         21                     6
+  Hash comparisons                               -                    15
+  Rolling-hash updates                           -                    14
+  Preprocessing operations                       -                    10
+  Spurious hits                                  -                     1
+  Total (unweighted sum)                        21                    45
+
+  Both algorithms report identical matches: YES
+
+========================================================================
+SCENARIO 4: worst case for BOTH (every shift is a real match)
+========================================================================
+  Text    (n=20): aaaaaaaaaaaaaaaaaaaa
+  Pattern (m=4): aaaa
+  Rabin-Karp parameters: d=256, q=101
+
+  Measure                                    Naive            Rabin-Karp
+  ----------------------------------------------------------------------
+  Matches found (shifts)         [0, 1, 2, ... 16]     [0, 1, 2, ... 16]
+  Number of matches                             17                    17
+  Character comparisons                         68                    68
+  Hash comparisons                               -                    17
+  Rolling-hash updates                           -                    16
+  Preprocessing operations                       -                     8
+  Spurious hits                                  -                     0
+  Total (unweighted sum)                        68                   109
+
+  Both algorithms report identical matches: YES
+
