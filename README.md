@@ -99,4 +99,4 @@ Besides the usual known-answer and edge-case checks, every random test compares 
 
 ## Author
 
-Tan, Computer Engineering (final year), Parvatibai Genba Moze College of Engineering, Pune (SPPU)
+Tanishka Badhai , Computer Engineering Undergrad
